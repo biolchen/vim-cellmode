@@ -106,7 +106,7 @@ function! CopyToTmux(code)
     call CallSystem("tmux set-buffer \".load " . l:cellmode_fname . "\"")
   elseif l:my_filetype ==# 'sql'
     call CallSystem("tmux set-buffer \"source " . l:cellmode_fname . "\"")
-  elseif l:my_filetype ==# 'pandoc'
+  elseif l:my_filetype ==# 'pandoc' || l:my_filetype ==# 'python'
     call CallSystem("tmux set-buffer \"%load -y " . l:cellmode_fname . "\n\"")
   end
   call CallSystem('tmux paste-buffer -t "' . target . '"')
