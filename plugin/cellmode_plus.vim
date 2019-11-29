@@ -153,6 +153,31 @@ function! RunTmuxLine()
   call RunTmuxReg()
 endfunction
 
+function! RunTmuxAllCellsAbove()
+  " Executes all the cells above the current line. That is, everything from
+  " the beginning of the file to the closest ## above the current line
+  call DefaultVars()
+
+  " Ask the user for confirmation, this could lead to huge execution
+  if input("Execute all cells above ? [y]|n ", 'y') != "y"
+    return
+  endif
+
+  let l:cursor_pos = getpos(".")
+
+  " Creates a range from the first line to the closest ## above the current
+  " line (?##? searches backward for ##)
+  let l:pat = ':1,?' . b:cellmode_cell_delimiter . '?y a'
+  silent exe l:pat
+
+  let @a=join(split(@a, "\n")[:-2], "\n")
+  call RunTmuxReg()
+  call setpos(".", l:cursor_pos)
+endfunction
+
+
+
+
 function! InitVariable(var, value)
     if !exists(a:var)
         execute 'let ' . a:var . ' = ' . "'" . a:value . "'"

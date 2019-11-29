@@ -71,7 +71,7 @@ You can disable default mappings :
 In addition, there is a function to execute all cells above the current line
 which isn't bound by default, but you can easily bind it with :
 
-  noremap <silent> <C-a> :call RunTmuxPythonAllCellsAbove()<CR>
+  noremap <silent> <C-a> :call RunTmuxAllCellsAbove()<CR>
 
 =============================================================================
 4. Options                                       *CellmodeOptions*
@@ -90,9 +90,9 @@ it seems to pick the most recently launched session.
 
 You can change the default mappings which are defined by
 
-  vmap <silent> <C-c> :call RunTmuxPythonChunk()<CR>
-  noremap <silent> <C-b> :call RunTmuxPythonCell(0)<CR>
-  noremap <silent> <C-g> :call RunTmuxPythonCell(1)<CR>
+  vmap <silent> <C-c> :call RunTmuxChunk()<CR>
+  noremap <silent> <C-b> :call RunTmuxCell(0)<CR>
+  noremap <silent> <C-g> :call RunTmuxCell(1)<CR>
 
 =============================================================================
 5. Credits                                       *CellmodeCredits*
