@@ -34,7 +34,8 @@ function! GetNextTempFile()
     au BufDelete <buffer> call CleanupTempFiles()
     let b:cellmode_fnames = []
     for i in range(1, b:cellmode_n_files)
-      call add(b:cellmode_fnames, tempname() . ".ipy")
+      "call add(b:cellmode_fnames, tempname() . ".ipy")
+      call add(b:cellmode_fnames, tempname() . ".py")
     endfor
     let b:cellmode_fnames_index = 0
   end
@@ -50,6 +51,10 @@ endfunction
 
 function! DefaultVars()
   let b:cellmode_n_files = GetVar('cellmode_n_files', 10)
+
+  if !exists("b:python_console")
+    let b:ipython_console = GetVar('ipython_console', 1)
+  end
 
   if !exists("b:cellmode_use_tmux")
     let b:cellmode_use_tmux = GetVar('cellmode_use_tmux', 1)
@@ -85,6 +90,7 @@ endfunction
 
 function! CopyToTmux(code)
   let l:my_filetype = &filetype
+  let l:my_filetype = &filetype
   let l:lines = split(a:code, "\n")
   if len(l:lines) == 0
     call add(l:lines, ' ')
@@ -107,7 +113,11 @@ function! CopyToTmux(code)
   elseif l:my_filetype ==# 'sql'
     call CallSystem("tmux set-buffer \"source " . l:cellmode_fname . "\"")
   elseif l:my_filetype ==# 'pandoc' || l:my_filetype ==# 'python'
-    call CallSystem("tmux set-buffer \"%load -y " . l:cellmode_fname . "\n\"")
+    if b:ipython_console ==# 1
+      call CallSystem("tmux set-buffer \"%load -y " . l:cellmode_fname . "\n\"")
+    elseif b:ipython_console ==# 0
+      call CallSystem("tmux set-buffer \"exec(open('" . l:cellmode_fname . "').read())\n\"")
+    end
   end
   call CallSystem('tmux paste-buffer -t "' . target . '"')
   let downlist = repeat('Down ', len(l:lines) + 1)
