@@ -11,9 +11,9 @@ function! Unindent(code)
 endfunction
 
 function! GetVar(name, default)
-  if (exists ("b:" . a:name))
+  if (exists ('b:' . a:name))
     return b:{a:name}
-  elseif (exists ("g:" . a:name))
+  elseif (exists ('g:' . a:name))
     return g:{a:name}
   else
     return a:default
@@ -30,12 +30,12 @@ function! CleanupTempFiles()
 endfunction
 
 function! GetNextTempFile()
-  if !exists("b:cellmode_fnames")
-    au BufDelete <buffer> call CleanupTempFiles()
+  if !exists('b:cellmode_fnames')
+    autocmd BufDelete <buffer> call CleanupTempFiles()
     let b:cellmode_fnames = []
     for i in range(1, b:cellmode_n_files)
-      "call add(b:cellmode_fnames, tempname() . ".ipy")
-      call add(b:cellmode_fnames, tempname() . ".py")
+      "call add(b:cellmode_fnames, tempname() . '.ipy')
+      call add(b:cellmode_fnames, tempname() . '.py')
     endfor
     let b:cellmode_fnames_index = 0
   end
@@ -52,29 +52,29 @@ endfunction
 function! DefaultVars()
   let b:cellmode_n_files = GetVar('cellmode_n_files', 10)
 
-  if !exists("b:python_console")
+  if !exists('b:python_console')
     let b:ipython_console = GetVar('ipython_console', 1)
   end
 
-  if !exists("b:cellmode_use_tmux")
+  if !exists('b:cellmode_use_tmux')
     let b:cellmode_use_tmux = GetVar('cellmode_use_tmux', 1)
   end
 
-  if !exists("b:cellmode_cell_delimiter")
+  if !exists('b:cellmode_cell_delimiter')
     let b:cellmode_cell_delimiter = GetVar('cellmode_cell_delimiter',
                                          \ '\(##\|#%%\|#\s%%\)')
   end
 
-  if !exists("b:cellmode_tmux_sessionname") ||
-   \ !exists("b:cellmode_tmux_windowname") ||
-   \ !exists("b:cellmode_tmux_panenumber")
+  if !exists('b:cellmode_tmux_sessionname') ||
+   \ !exists('b:cellmode_tmux_windowname') ||
+   \ !exists('b:cellmode_tmux_panenumber')
     let b:cellmode_tmux_sessionname = GetVar('cellmode_tmux_sessionname', '')
     let b:cellmode_tmux_windowname = GetVar('cellmode_tmux_windowname', '')
     let b:cellmode_tmux_panenumber = GetVar('cellmode_tmux_panenumber', '0')
   end
 
-  if !exists("g:cellmode_screen_sessionname") ||
-   \ !exists("b:cellmode_screen_window")
+  if !exists('g:cellmode_screen_sessionname') ||
+   \ !exists('b:cellmode_screen_window')
     let b:cellmode_screen_sessionname = GetVar('cellmode_screen_sessionname', 'ipython')
     let b:cellmode_screen_window = GetVar('cellmode_screen_window', '0')
   end
@@ -89,7 +89,6 @@ function! CallSystem(cmd)
 endfunction
 
 function! CopyToTmux(code)
-  let l:my_filetype = &filetype
   let l:my_filetype = &filetype
   let l:lines = split(a:code, "\n")
   if len(l:lines) == 0
@@ -169,11 +168,11 @@ function! RunTmuxAllCellsAbove()
   call DefaultVars()
 
   " Ask the user for confirmation, this could lead to huge execution
-  if input("Execute all cells above ? [y]|n ", 'y') != "y"
+  if input('Execute all cells above ? [y]|n ', 'y') !=# 'y'
     return
   endif
 
-  let l:cursor_pos = getpos(".")
+  let l:cursor_pos = getpos('.')
 
   " Creates a range from the first line to the closest ## above the current
   " line (?##? searches backward for ##)
@@ -182,9 +181,8 @@ function! RunTmuxAllCellsAbove()
 
   let @a=join(split(@a, "\n")[:-2], "\n")
   call RunTmuxReg()
-  call setpos(".", l:cursor_pos)
+  call setpos('.', l:cursor_pos)
 endfunction
-
 
 
 
@@ -196,7 +194,7 @@ function! InitVariable(var, value)
     return 0
 endfunction
 
-call InitVariable("g:cellmode_default_mappings", 1)
+call InitVariable('g:cellmode_default_mappings', 1)
 
 if g:cellmode_default_mappings
     vmap <silent> <C-c> :call RunTmuxChunk()<CR>
