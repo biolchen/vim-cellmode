@@ -122,7 +122,7 @@ function! CopyToTmux(code)
   let downlist = repeat('Down ', len(l:lines) + 1)
   call CallSystem('tmux send-keys -t "' . target . '" ' . downlist)
   call CallSystem('tmux send-keys -t "' . target . '" Enter')
-  echo target
+  echo "Target: " . target
 endfunction
 
 function! RunTmuxReg()
