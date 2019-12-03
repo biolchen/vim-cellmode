@@ -125,6 +125,116 @@ function! CopyToTmux(code)
   echo "Target: " . target
 endfunction
 
+
+function! CleanIpython(code)
+  let l:my_filetype = &filetype
+  let l:lines = split(a:code, "\n")
+  if len(l:lines) == 0
+    call add(l:lines, ' ')
+  end
+  let l:cellmode_fname = GetNextTempFile()
+  call writefile(l:lines, l:cellmode_fname)
+  if strlen(b:cellmode_tmux_sessionname) == 0
+    let l:sprefix = ''
+  else
+    let l:sprefix = '$'
+  end
+  let target = l:sprefix . b:cellmode_tmux_sessionname . ':'
+             \ . b:cellmode_tmux_windowname . '.'
+             \ . b:cellmode_tmux_panenumber
+
+  if l:my_filetype ==# 'pandoc' || l:my_filetype ==# 'python'
+    if b:ipython_console ==# 1
+      call CallSystem("tmux set-buffer \"%reset -f " . l:cellmode_fname . "\n\"")
+      call CallSystem('tmux paste-buffer -t "' . target . '"')
+      let downlist = repeat('Down ', len(l:lines) + 1)
+      call CallSystem('tmux send-keys -t "' . target . '" ' . downlist)
+      call CallSystem('tmux send-keys -t "' . target . '" Enter')
+      echo "Target: " . target
+    else
+      echo "not in ipython!"
+    end
+endfunction
+
+
+function! RunTmuxReg()
+  let l:code = Unindent(@a)
+  call CopyToTmux(l:code)
+endfunction
+
+function! RunTmuxCell(restore_cursor)
+  call DefaultVars()
+  if a:restore_cursor
+    let l:winview = winsaveview()
+  end
+
+  let l:pat = ':?' . b:cellmode_cell_delimiter . '?;/' . b:cellmode_cell_delimiter . '/y a'
+
+  silent exe l:pat
+  execute "normal! ']"
+  execute "normal! j"
+
+  let @a=join(split(@a, "\n")[1:-2], "\n")
+  call RunTmuxReg()
+  if a:restore_cursor
+    call winrestview(l:winview)
+  end
+endfunction
+
+function! RunTmuxChunk() range
+  call DefaultVars()
+  " Yank current selection to register a
+  silent normal gv"ay
+  call RunTmuxReg()
+endfunction
+
+function! RunTmuxLine()
+  call DefaultVars()
+  " Yank current selection to register a
+  silent normal "ayy
+  call RunTmuxReg()
+endfunction
+
+function! RunTmuxAllCellsAbove()
+  " Executes all the cells above the current line. That is, everything from
+  " the beginning of the file to the closest ## above the current line
+  call DefaultVars()
+
+  " Ask the user for confirmation, this could lead to huge execution
+  if input('Execute all cells above ? [y]|n ', 'y') !=# 'y'
+    return
+  endif
+
+  let l:cursor_pos = getpos('.')
+
+  " Creates a range from the first line to the closest ## above the current
+  " line (?##? searches backward for ##)
+  let l:pat = ':1,?' . b:cellmode_cell_delimiter . '?y a'
+  silent exe l:pat
+
+  let @a=join(split(@a, "\n")[:-2], "\n")
+  call RunTmuxReg()
+  call setpos('.', l:cursor_pos)
+endfunction
+
+
+
+function! InitVariable(var, value)
+    if !exists(a:var)
+        execute 'let ' . a:var . ' = ' . "'" . a:value . "'"
+        return 1
+    endif
+    return 0
+endfunction
+
+call InitVariable('g:cellmode_default_mappings', 1)
+
+if g:cellmode_default_mappings
+    vmap <silent> <C-c> :call RunTmuxChunk()<CR>
+    noremap <silent> <C-b> :call RunTmuxCell(0)<CR>
+    noremap <silent> <C-g> :call RunTmuxCell(1)<CR>
+endif
+
 function! RunTmuxReg()
   let l:code = Unindent(@a)
   call CopyToTmux(l:code)
