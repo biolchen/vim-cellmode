@@ -10,6 +10,7 @@ function! Unindent(code)
   return l:ucode
 endfunction
 
+
 function! GetVar(name, default)
   if (exists ('b:' . a:name))
     return b:{a:name}
@@ -29,13 +30,14 @@ function! CleanupTempFiles()
   end
 endfunction
 
+
 function! GetNextTempFile()
   if !exists('b:cellmode_fnames')
     autocmd BufDelete <buffer> call CleanupTempFiles()
     let b:cellmode_fnames = []
     for i in range(1, b:cellmode_n_files)
       "call add(b:cellmode_fnames, tempname() . '.ipy')
-      call add(b:cellmode_fnames, tempname() . '.py')
+      call add(b:cellmode_fnames, tempname())
     endfor
     let b:cellmode_fnames_index = 0
   end
@@ -48,6 +50,7 @@ function! GetNextTempFile()
 
   return l:cellmode_fname
 endfunction
+
 
 function! DefaultVars()
   let b:cellmode_n_files = GetVar('cellmode_n_files', 10)
@@ -80,6 +83,7 @@ function! DefaultVars()
   end
 endfunction
 
+
 function! CallSystem(cmd)
   " Execute the given system command, reporting errors if any
   let l:out = system(a:cmd)
@@ -87,6 +91,7 @@ function! CallSystem(cmd)
     echom 'Vim-cellmode, error running ' . a:cmd . ' : ' . l:out
   end
 endfunction
+
 
 function! CopyToTmux(code)
   let l:my_filetype = &filetype
@@ -101,9 +106,16 @@ function! CopyToTmux(code)
   else
     let l:sprefix = '$'
   end
-  let target = l:sprefix . b:cellmode_tmux_sessionname . ':'
-             \ . b:cellmode_tmux_windowname . '.'
-             \ . b:cellmode_tmux_panenumber
+
+  if l:my_filetype ==# 'python'
+    let target = l:sprefix . b:cellmode_tmux_sessionname . ':'
+               \ . b:cellmode_tmux_windowname . '.'
+               \ . b:cellmode_tmux_panenumber
+  elseif l:my_filetype ==# 'sh' || l:my_filetype==# 'sql' || l:my_filetype ==# 'javascript'
+    let target = l:sprefix . b:cellmode_tmux_sessionname . ':'
+               \ . b:cellmode_tmux_windowname . '.'
+               \ . 2
+  end
 
   if l:my_filetype ==# 'sh'
     call CallSystem("tmux set-buffer \"sh " . l:cellmode_fname . "\"")
@@ -122,38 +134,47 @@ function! CopyToTmux(code)
   let downlist = repeat('Down ', len(l:lines) + 1)
   call CallSystem('tmux send-keys -t "' . target . '" ' . downlist)
   call CallSystem('tmux send-keys -t "' . target . '" Enter')
-  echo "Target: " . target
+  echo 'Target: pane ' . target
 endfunction
 
 
-function! CleanIpython(code)
-  let l:my_filetype = &filetype
-  let l:lines = split(a:code, "\n")
-  if len(l:lines) == 0
-    call add(l:lines, ' ')
-  end
-  let l:cellmode_fname = GetNextTempFile()
-  call writefile(l:lines, l:cellmode_fname)
-  if strlen(b:cellmode_tmux_sessionname) == 0
-    let l:sprefix = ''
-  else
-    let l:sprefix = '$'
-  end
-  let target = l:sprefix . b:cellmode_tmux_sessionname . ':'
+function! RunCleanIpython()
+  call DefaultVars()
+  let target = b:cellmode_tmux_sessionname . ':'
              \ . b:cellmode_tmux_windowname . '.'
              \ . b:cellmode_tmux_panenumber
 
-  if l:my_filetype ==# 'pandoc' || l:my_filetype ==# 'python'
-    if b:ipython_console ==# 1
-      call CallSystem("tmux set-buffer \"%reset -f " . l:cellmode_fname . "\n\"")
-      call CallSystem('tmux paste-buffer -t "' . target . '"')
-      let downlist = repeat('Down ', len(l:lines) + 1)
-      call CallSystem('tmux send-keys -t "' . target . '" ' . downlist)
-      call CallSystem('tmux send-keys -t "' . target . '" Enter')
-      echo "Target: " . target
-    else
-      echo "not in ipython!"
-    end
+    call CallSystem("tmux set-buffer \"%reset -f \n\"")
+    call CallSystem('tmux paste-buffer -t "' . target . '"')
+    call CallSystem('tmux send-keys Enter')
+    echo 'Target: ' . target
+endfunction
+
+
+function! SetPath()
+  call DefaultVars()
+  let filepath = expand('%:p:h')
+  let target = b:cellmode_tmux_sessionname . ':'
+             \ . b:cellmode_tmux_windowname . '.'
+             \ . b:cellmode_tmux_panenumber
+
+    call CallSystem("tmux set-buffer \"%cd " . filepath . "\"")
+    call CallSystem('tmux paste-buffer -t "' . target . '"')
+    call CallSystem('tmux send-keys Enter')
+    echo 'Target: ' . target
+endfunction
+
+
+function! SetMatplotlib()
+  call DefaultVars()
+  let target = b:cellmode_tmux_sessionname . ':'
+             \ . b:cellmode_tmux_windowname . '.'
+             \ . b:cellmode_tmux_panenumber
+
+    call CallSystem("tmux set-buffer \"%matplotlib \n\"")
+    call CallSystem('tmux paste-buffer -t "' . target . '"')
+    call CallSystem('tmux send-keys Enter')
+    echo 'Target: ' . target
 endfunction
 
 
@@ -172,85 +193,7 @@ function! RunTmuxCell(restore_cursor)
 
   silent exe l:pat
   execute "normal! ']"
-  execute "normal! j"
-
-  let @a=join(split(@a, "\n")[1:-2], "\n")
-  call RunTmuxReg()
-  if a:restore_cursor
-    call winrestview(l:winview)
-  end
-endfunction
-
-function! RunTmuxChunk() range
-  call DefaultVars()
-  " Yank current selection to register a
-  silent normal gv"ay
-  call RunTmuxReg()
-endfunction
-
-function! RunTmuxLine()
-  call DefaultVars()
-  " Yank current selection to register a
-  silent normal "ayy
-  call RunTmuxReg()
-endfunction
-
-function! RunTmuxAllCellsAbove()
-  " Executes all the cells above the current line. That is, everything from
-  " the beginning of the file to the closest ## above the current line
-  call DefaultVars()
-
-  " Ask the user for confirmation, this could lead to huge execution
-  if input('Execute all cells above ? [y]|n ', 'y') !=# 'y'
-    return
-  endif
-
-  let l:cursor_pos = getpos('.')
-
-  " Creates a range from the first line to the closest ## above the current
-  " line (?##? searches backward for ##)
-  let l:pat = ':1,?' . b:cellmode_cell_delimiter . '?y a'
-  silent exe l:pat
-
-  let @a=join(split(@a, "\n")[:-2], "\n")
-  call RunTmuxReg()
-  call setpos('.', l:cursor_pos)
-endfunction
-
-
-
-function! InitVariable(var, value)
-    if !exists(a:var)
-        execute 'let ' . a:var . ' = ' . "'" . a:value . "'"
-        return 1
-    endif
-    return 0
-endfunction
-
-call InitVariable('g:cellmode_default_mappings', 1)
-
-if g:cellmode_default_mappings
-    vmap <silent> <C-c> :call RunTmuxChunk()<CR>
-    noremap <silent> <C-b> :call RunTmuxCell(0)<CR>
-    noremap <silent> <C-g> :call RunTmuxCell(1)<CR>
-endif
-
-function! RunTmuxReg()
-  let l:code = Unindent(@a)
-  call CopyToTmux(l:code)
-endfunction
-
-function! RunTmuxCell(restore_cursor)
-  call DefaultVars()
-  if a:restore_cursor
-    let l:winview = winsaveview()
-  end
-
-  let l:pat = ':?' . b:cellmode_cell_delimiter . '?;/' . b:cellmode_cell_delimiter . '/y a'
-
-  silent exe l:pat
-  execute "normal! ']"
-  execute "normal! j"
+  execute 'normal! j'
 
   let @a=join(split(@a, "\n")[1:-2], "\n")
   call RunTmuxReg()
