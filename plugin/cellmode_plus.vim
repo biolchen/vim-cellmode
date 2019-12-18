@@ -21,6 +21,7 @@ function! GetVar(name, default)
   end
 endfunction
 
+
 function! CleanupTempFiles()
   if (exists('b:cellmode_fnames'))
     for fname in b:cellmode_fnames
@@ -107,7 +108,7 @@ function! CopyToTmux(code)
     let l:sprefix = '$'
   end
 
-  if l:my_filetype ==# 'python'
+  if l:my_filetype ==# 'python' || l:my_filetype==# 'R' || l:my_filetype==# 'Rmd'
     let target = l:sprefix . b:cellmode_tmux_sessionname . ':'
                \ . b:cellmode_tmux_windowname . '.'
                \ . b:cellmode_tmux_panenumber
