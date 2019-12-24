@@ -216,6 +216,7 @@ function! RunTmuxLine()
   call DefaultVars()
   " Yank current selection to register a
   silent normal "ayy
+  silent normal j
   call RunTmuxReg()
 endfunction
 
