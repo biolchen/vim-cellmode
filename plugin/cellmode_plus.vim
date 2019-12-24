@@ -108,7 +108,7 @@ function! CopyToTmux(code)
     let l:sprefix = '$'
   end
 
-  if l:my_filetype ==# 'python' || l:my_filetype==# 'r' || l:my_filetype==# 'md'
+  if l:my_filetype ==# 'python' || l:my_filetype==# 'r' || l:my_filetype==# 'rmd'
     let target = l:sprefix . b:cellmode_tmux_sessionname . ':'
                \ . b:cellmode_tmux_windowname . '.'
                \ . b:cellmode_tmux_panenumber
