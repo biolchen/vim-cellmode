@@ -156,12 +156,17 @@ endfunction
 
 function! SetPath()
   call DefaultVars()
+  let l:my_filetype = &filetype
   let filepath = expand('%:p:h')
   let target = b:cellmode_tmux_sessionname . ':'
              \ . b:cellmode_tmux_windowname . '.'
              \ . b:cellmode_tmux_panenumber
-
+  if l:my_filetype==# 'python' || l:my_filetype==# 'pandoc'
     call CallSystem("tmux set-buffer \"%cd " . filepath . "\"")
+    call CallSystem('tmux paste-buffer -t "' . target . '"')
+    call CallSystem('tmux send-keys Enter')
+  elseif l:my_filetype==# 'r' || l:my_filetype==# 'rmd'
+    call CallSystem("tmux set-buffer \"setcwd('" . filepath . "')\"")
     call CallSystem('tmux paste-buffer -t "' . target . '"')
     call CallSystem('tmux send-keys Enter')
     echo 'Target: ' . target
