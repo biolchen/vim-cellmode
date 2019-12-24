@@ -166,9 +166,10 @@ function! SetPath()
     call CallSystem('tmux paste-buffer -t "' . target . '"')
     call CallSystem('tmux send-keys Enter')
   elseif l:my_filetype==# 'r' || l:my_filetype==# 'rmd'
-    call CallSystem("tmux set-buffer \"setcwd('" . filepath . "')\"")
+    call CallSystem("tmux set-buffer \"setwd('" . filepath . "')\"")
     call CallSystem('tmux paste-buffer -t "' . target . '"')
     call CallSystem('tmux send-keys Enter')
+  end
     echo 'Target: ' . target
 endfunction
 
