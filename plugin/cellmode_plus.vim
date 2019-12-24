@@ -120,8 +120,10 @@ function! CopyToTmux(code)
 
   if l:my_filetype ==# 'sh'
     call CallSystem("tmux set-buffer \"sh " . l:cellmode_fname . "\"")
-  elseif l:my_filetype ==# 'javascript'
+  elseif l:my_filetype==# 'r' || l:my_filetype==# 'rmd'
     call CallSystem("tmux set-buffer \".load " . l:cellmode_fname . "\"")
+  elseif l:my_filetype ==# 'javascript'
+    call CallSystem("tmux set-buffer \"source(' " . l:cellmode_fname . "'\"")
   elseif l:my_filetype ==# 'sql'
     call CallSystem("tmux set-buffer \"source " . l:cellmode_fname . "\"")
   elseif l:my_filetype ==# 'pandoc' || l:my_filetype ==# 'python'
