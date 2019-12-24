@@ -108,7 +108,7 @@ function! CopyToTmux(code)
     let l:sprefix = '$'
   end
 
-  if l:my_filetype ==# 'python' || l:my_filetype==# 'r' || l:my_filetype==# 'rmd'
+  if l:my_filetype ==# 'python' || l:my_filetype==# 'r' || l:my_filetype==# 'md'
     let target = l:sprefix . b:cellmode_tmux_sessionname . ':'
                \ . b:cellmode_tmux_windowname . '.'
                \ . b:cellmode_tmux_panenumber
@@ -121,9 +121,9 @@ function! CopyToTmux(code)
   if l:my_filetype ==# 'sh'
     call CallSystem("tmux set-buffer \"sh " . l:cellmode_fname . "\"")
   elseif l:my_filetype==# 'r' || l:my_filetype==# 'rmd'
-    call CallSystem("tmux set-buffer \".load " . l:cellmode_fname . "\"")
-  elseif l:my_filetype ==# 'javascript'
     call CallSystem("tmux set-buffer \"source(' " . l:cellmode_fname . "'\"")
+  elseif l:my_filetype ==# 'javascript'
+    call CallSystem("tmux set-buffer \".load " . l:cellmode_fname . "\"")
   elseif l:my_filetype ==# 'sql'
     call CallSystem("tmux set-buffer \"source " . l:cellmode_fname . "\"")
   elseif l:my_filetype ==# 'pandoc' || l:my_filetype ==# 'python'
