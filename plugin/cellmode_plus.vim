@@ -108,7 +108,7 @@ function! CopyToTmux(code)
     let l:sprefix = '$'
   end
 
-  if l:my_filetype ==# 'python' || l:my_filetype==# 'r' || l:my_filetype==# 'rmd'
+  if l:my_filetype ==# 'python' || l:my_filetype ==# 'pandoc' || l:my_filetype==# 'r' || l:my_filetype==# 'rmd'
     let target = l:sprefix . b:cellmode_tmux_sessionname . ':'
                \ . b:cellmode_tmux_windowname . '.'
                \ . b:cellmode_tmux_panenumber
@@ -167,6 +167,42 @@ function! SetPath()
     call CallSystem('tmux send-keys Enter')
   elseif l:my_filetype==# 'r' || l:my_filetype==# 'rmd'
     call CallSystem("tmux set-buffer \"setwd('" . filepath . "')\"")
+    call CallSystem('tmux paste-buffer -t "' . target . '"')
+    call CallSystem('tmux send-keys Enter')
+  end
+endfunction
+
+
+function! PrintOutput()
+  call DefaultVars()
+  let l:my_filetype = &filetype
+  let wordUnderCursor = expand("<cword>")
+  let currentLine   = getline(".")
+  let filepath = expand('%:p:h')
+  let target = b:cellmode_tmux_sessionname . ':'
+             \ . b:cellmode_tmux_windowname . '.'
+             \ . b:cellmode_tmux_panenumber
+  if l:my_filetype==# 'python' || l:my_filetype==# 'pandoc' || l:my_filetype==# 'r' || l:my_filetype==# 'rmd'
+    call CallSystem("tmux set-buffer \"print(" . wordUnderCursor . ")\"")
+    call CallSystem('tmux paste-buffer -t "' . target . '"')
+    call CallSystem('tmux send-keys Enter')
+  end
+    echo 'Target: ' . target
+endfunction
+
+
+function! CopyLine()
+  call DefaultVars()
+  set iskeyword+=@-@
+  let l:my_filetype = &filetype
+  let wordUnderCursor = expand("<cWORD>")
+  let currentLine   = getline(".")
+  let filepath = expand('%:p:h')
+  let target = b:cellmode_tmux_sessionname . ':'
+             \ . b:cellmode_tmux_windowname . '.'
+             \ . b:cellmode_tmux_panenumber
+  if l:my_filetype==# 'python' || l:my_filetype==# 'pandoc' || l:my_filetype==# 'r' || l:my_filetype==# 'rmd'
+    call CallSystem("tmux set-buffer \"" . currentLine . "\"")
     call CallSystem('tmux paste-buffer -t "' . target . '"')
     call CallSystem('tmux send-keys Enter')
   end
